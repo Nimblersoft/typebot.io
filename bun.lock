@@ -71,6 +71,7 @@
         "@typebot.io/settings": "workspace:*",
         "@typebot.io/shared-core": "workspace:*",
         "@typebot.io/spaces": "workspace:*",
+        "@typebot.io/subscriptions": "workspace:*",
         "@typebot.io/telemetry": "workspace:*",
         "@typebot.io/templates": "workspace:*",
         "@typebot.io/theme": "workspace:*",
@@ -1214,6 +1215,18 @@
       },
       "devDependencies": {
         "@effect/vitest": "4.0.0-beta.38",
+      },
+    },
+    "packages/subscriptions": {
+      "name": "@typebot.io/subscriptions",
+      "version": "0.0.1",
+      "dependencies": {
+        "@orpc/server": "^1.13.9",
+        "@typebot.io/env": "workspace:*",
+        "@typebot.io/prisma": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.9",
       },
     },
     "packages/telemetry": {
@@ -3256,6 +3269,8 @@
     "@typebot.io/shared-core": ["@typebot.io/shared-core@workspace:packages/shared-core"],
 
     "@typebot.io/spaces": ["@typebot.io/spaces@workspace:packages/spaces"],
+
+    "@typebot.io/subscriptions": ["@typebot.io/subscriptions@workspace:packages/subscriptions"],
 
     "@typebot.io/telemetry": ["@typebot.io/telemetry@workspace:packages/telemetry"],
 

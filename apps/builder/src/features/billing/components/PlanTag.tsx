@@ -56,5 +56,12 @@ export const PlanBadge = ({
         </Badge>
       );
     }
+    case Plan.BUSINESS: {
+      return (
+        <Badge colorScheme="blue" className={className}>
+          Business
+        </Badge>
+      );
+    }
   }
 };

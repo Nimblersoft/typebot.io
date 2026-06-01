@@ -14,6 +14,10 @@ import {
 } from "@typebot.io/typebot/schemas/typebot";
 import { z } from "zod";
 import {
+  countWorkspaceTypebotsInputSchema,
+  handleCountWorkspaceTypebots,
+} from "./handleCountWorkspaceTypebots";
+import {
   createTypebotInputSchema,
   handleCreateTypebot,
 } from "./handleCreateTypebot";
@@ -205,6 +209,11 @@ const isPublicIdAvailable = authenticatedProcedure
   .input(isPublicIdAvailableInputSchema)
   .handler(handleIsPublicIdAvailable);
 
+const countWorkspaceTypebots = authenticatedProcedure
+  .input(countWorkspaceTypebotsInputSchema)
+  .output(z.object({ count: z.number() }))
+  .handler(handleCountWorkspaceTypebots);
+
 export type TypebotRouter = {
   createTypebot: typeof createTypebot;
   getTypebot: typeof getTypebot;
@@ -217,6 +226,7 @@ export type TypebotRouter = {
   importTypebot: typeof importTypebot;
   getTypebotBlocks: typeof getTypebotBlocks;
   isPublicIdAvailable: typeof isPublicIdAvailable;
+  countWorkspaceTypebots: typeof countWorkspaceTypebots;
 };
 
 export const typebotRouter: TypebotRouter = {
@@ -231,4 +241,5 @@ export const typebotRouter: TypebotRouter = {
   importTypebot,
   getTypebotBlocks,
   isPublicIdAvailable,
+  countWorkspaceTypebots,
 };

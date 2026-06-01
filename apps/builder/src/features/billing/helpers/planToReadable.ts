@@ -5,6 +5,10 @@ export const planToReadable = (plan?: Plan) => {
   switch (plan) {
     case Plan.FREE:
       return "Free";
+    case Plan.BUSINESS:
+      return "Business";
+    case Plan.ENTERPRISE:
+      return "Enterprise";
     case Plan.LIFETIME:
       return "Lifetime";
     case Plan.OFFERED:

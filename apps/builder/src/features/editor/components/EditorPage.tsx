@@ -7,6 +7,7 @@ import { GraphProvider } from "@/features/graph/providers/GraphProvider";
 import { VideoOnboardingFloatingWindow } from "@/features/onboarding/components/VideoOnboardingFloatingWindow";
 import { PreviewDrawer } from "@/features/preview/components/PreviewDrawer";
 import { VariablesDrawer } from "@/features/preview/components/VariablesDrawer";
+import { OverBotLimitBanner } from "@/features/workspace/components/OverBotLimitBanner";
 import { useWorkspace } from "@/features/workspace/WorkspaceProvider";
 import { useRightPanel } from "@/hooks/useRightPanel";
 import { useThemeValue } from "@/hooks/useThemeValue";
@@ -35,6 +36,7 @@ export const EditorPage = () => {
         ref={editorContainerRef}
       >
         <VideoOnboardingFloatingWindow type="editor" />
+        <OverBotLimitBanner />
         {isSuspicious && <SuspectedTypebotBanner typebotId={typebot.id} />}
         <TypebotHeader />
         <div

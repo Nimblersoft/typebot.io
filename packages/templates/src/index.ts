@@ -20,6 +20,8 @@ export type TemplateHighlight = {
   description: string;
 };
 
+export type TemplatePlanRequirement = "BUSINESS" | "ENTERPRISE";
+
 export type TemplateDefinition = {
   name: string;
   summary: string;
@@ -36,6 +38,7 @@ export type TemplateDefinition = {
   isComingSoon?: boolean;
   isNew?: boolean;
   updatedAt: string;
+  requiredPlan?: TemplatePlanRequirement;
 };
 
 export type Template = TemplateDefinition & {

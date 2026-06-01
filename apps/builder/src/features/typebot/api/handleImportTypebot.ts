@@ -4,7 +4,10 @@ import { copyObjects } from "@typebot.io/lib/s3/copyObjects";
 import { replaceTypebotUploadUrlsWithNewIds } from "@typebot.io/lib/s3/replaceTypebotUploadUrlsWithNewIds";
 import prisma from "@typebot.io/prisma";
 import { Plan } from "@typebot.io/prisma/enum";
+import { getTypebotsLimit } from "@typebot.io/subscriptions/getTypebotsLimit";
+import { isPlanEntitledForTemplate } from "@typebot.io/subscriptions/isPlanEntitledForTemplate";
 import { trackEvents } from "@typebot.io/telemetry/trackEvents";
+import { templates as templatesData } from "@typebot.io/templates";
 import { migrateTypebot } from "@typebot.io/typebot/migrations/migrateTypebot";
 import { preprocessTypebot } from "@typebot.io/typebot/preprocessTypebot";
 import {
@@ -107,6 +110,29 @@ export const handleImportTypebot = async ({
   const userRole = getUserModeInWorkspace(user.id, workspace?.members);
   if (userRole === "guest" || !workspace)
     throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+
+  if (fromTemplate) {
+    const template = templatesData.find((t) => t.name === fromTemplate);
+    if (
+      template &&
+      !isPlanEntitledForTemplate(workspace.plan, template.requiredPlan)
+    )
+      throw new ORPCError("FORBIDDEN", {
+        message:
+          "This template requires a higher plan. Upgrade to Business to use it.",
+      });
+  }
+
+  const limit = getTypebotsLimit(workspace.plan);
+  if (limit !== "inf") {
+    const typebotCount = await prisma.typebot.count({
+      where: { workspaceId, isArchived: { not: true } },
+    });
+    if (typebotCount >= limit)
+      throw new ORPCError("BAD_REQUEST", {
+        message: `You have reached the bot limit for your plan (${limit} bot${limit === 1 ? "" : "s"}). Upgrade to Business to create more.`,
+      });
+  }
 
   const newBotId = createId();
 

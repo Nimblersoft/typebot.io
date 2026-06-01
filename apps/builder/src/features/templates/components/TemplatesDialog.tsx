@@ -1,6 +1,8 @@
 import { useTranslate } from "@tolgee/react";
 import { sendRequest } from "@typebot.io/lib/utils";
+import { Plan } from "@typebot.io/prisma/enum";
 import { Standard } from "@typebot.io/react";
+import { isPlanEntitledForTemplate } from "@typebot.io/subscriptions/isPlanEntitledForTemplate";
 import { templates as templatesData } from "@typebot.io/templates";
 import type { Typebot } from "@typebot.io/typebot/schemas/typebot";
 import { Badge } from "@typebot.io/ui/components/Badge";
@@ -26,11 +28,14 @@ export const TemplatesDialog = ({
 }: Props) => {
   const { t } = useTranslate();
   const [typebot, setTypebot] = useState<Typebot>();
-  const templates = templatesData;
+  const { workspace } = useWorkspace();
+  const workspacePlan = workspace?.plan ?? Plan.FREE;
+  const templates = templatesData.filter((t) =>
+    isPlanEntitledForTemplate(workspacePlan, t.requiredPlan),
+  );
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateProps>(
     templates[0],
   );
-  const { workspace } = useWorkspace();
 
   const fetchTemplate = useCallback(
     async (template: TemplateProps) => {

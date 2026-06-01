@@ -9,6 +9,8 @@ import { EventType } from "@typebot.io/events/constants";
 import type { TDraggableEvent } from "@typebot.io/events/schemas";
 import { forgedBlocks } from "@typebot.io/forge-repository/definitions";
 import { isDefined } from "@typebot.io/lib/utils";
+import { Plan } from "@typebot.io/prisma/enum";
+import { hasFeature } from "@typebot.io/subscriptions/features";
 import { Input } from "@typebot.io/ui/components/Input";
 import { Tooltip } from "@typebot.io/ui/components/Tooltip";
 import { SquareLock01Icon } from "@typebot.io/ui/icons/SquareLock01Icon";
@@ -19,6 +21,7 @@ import { useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { Portal } from "@/components/Portal";
 import { useBlockDnd } from "@/features/graph/providers/GraphDndProvider";
+import { useWorkspace } from "@/features/workspace/WorkspaceProvider";
 import { useEventListener } from "@/hooks/useEventListener";
 import { EventCard } from "../../events/components/EventCard";
 import { EventCardOverlay } from "../../events/components/EventCardOverlay";
@@ -38,6 +41,8 @@ const legacyIntegrationBlocks = [IntegrationBlockType.OPEN_AI];
 
 export const BlocksSideBar = () => {
   const { t } = useTranslate();
+  const { workspace } = useWorkspace();
+  const workspacePlan = workspace?.plan ?? Plan.FREE;
   const {
     setDraggedBlockType,
     draggedBlockType,
@@ -138,6 +143,8 @@ export const BlocksSideBar = () => {
 
   const filteredForgedBlockIds = Object.values(forgedBlocks)
     .filter((block) => {
+      if (block.id === "cal-com" && !hasFeature(workspacePlan, "calCom"))
+        return false;
       return (
         block.id.toLowerCase().includes(searchInput.toLowerCase()) ||
         block.tags?.some((tag: string) =>

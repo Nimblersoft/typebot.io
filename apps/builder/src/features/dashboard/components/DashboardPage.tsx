@@ -10,6 +10,7 @@ import { Seo } from "@/components/Seo";
 import { FolderContent } from "@/features/folders/components/FolderContent";
 import { TypebotDndProvider } from "@/features/folders/TypebotDndProvider";
 import { useUser } from "@/features/user/hooks/useUser";
+import { OverBotLimitBanner } from "@/features/workspace/components/OverBotLimitBanner";
 import { useWorkspace } from "@/features/workspace/WorkspaceProvider";
 import { orpc } from "@/lib/queryClient";
 import { toast } from "@/lib/toast";
@@ -115,6 +116,7 @@ export const DashboardPage = () => {
     <div className="flex flex-col gap-2 min-h-screen">
       <Seo title={workspace?.name ?? t("dashboard.title")} />
       <DashboardHeader />
+      <OverBotLimitBanner />
       <TypebotDndProvider>
         {isLoading ? (
           <div className="flex flex-col w-full justify-center pt-10 gap-6">

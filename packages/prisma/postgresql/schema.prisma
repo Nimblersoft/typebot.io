@@ -473,6 +473,7 @@ enum Plan {
   CUSTOM
   UNLIMITED
   ENTERPRISE
+  BUSINESS
 }
 
 enum CollaborationType {

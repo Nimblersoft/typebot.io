@@ -13,7 +13,8 @@ export const getChatsLimit = ({
     plan === Plan.UNLIMITED ||
     plan === Plan.LIFETIME ||
     plan === Plan.OFFERED ||
-    plan === Plan.CUSTOM
+    plan === Plan.CUSTOM ||
+    plan === Plan.BUSINESS
   )
     return "inf";
   return chatsLimits[plan];
