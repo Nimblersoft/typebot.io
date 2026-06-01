@@ -64,8 +64,8 @@
   --card-foreground: var(--color-stone-900);
   --popover: var(--color-white);
   --popover-foreground: var(--color-stone-900);
-  --primary: var(--color-orange-500);
-  --primary-foreground: var(--color-white);
+  --primary: #22d3ee;
+  --primary-foreground: #0a0f1c;
   --secondary: var(--color-stone-100);
   --secondary-foreground: var(--color-stone-900);
   --muted: var(--color-neutral-100);
@@ -88,14 +88,14 @@
 }
 
 .dark {
-  --background: var(--color-neutral-950);
+  --background: #0a0f1c;
   --foreground: var(--color-stone-100);
-  --card: var(--color-stone-900);
+  --card: #121828;
   --card-foreground: var(--color-stone-100);
-  --popover: var(--color-stone-900);
+  --popover: #121828;
   --popover-foreground: var(--color-stone-100);
-  --primary: var(--color-orange-600);
-  --primary-foreground: var(--color-white);
+  --primary: #22d3ee;
+  --primary-foreground: #0a0f1c;
   --secondary: var(--color-stone-800);
   --secondary-foreground: var(--color-stone-50);
   --muted: var(--color-stone-900);
