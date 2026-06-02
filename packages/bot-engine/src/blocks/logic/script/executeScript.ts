@@ -80,19 +80,29 @@ export const parseScriptToExecuteClientSideAction = (
   contentToEvaluate: string,
   sessionStore: SessionStore,
 ) => {
-  const content = parseVariables(contentToEvaluate, {
+  const toSafeJsId = (id: string) => (/^\d/.test(id) ? `_${id}` : id);
+
+  const extractedVars = extractVariablesFromText(variables)(
+    contentToEvaluate,
+  ).map((variable) => ({
+    id: variable.id,
+    safeId: toSafeJsId(variable.id),
+    value: parseGuessedValueType(variable.value),
+  }));
+
+  let content = parseVariables(contentToEvaluate, {
     variables,
     sessionStore,
     fieldToParse: "id",
   });
-  const args = extractVariablesFromText(variables)(contentToEvaluate).map(
-    (variable) => ({
-      id: variable.id,
-      value: parseGuessedValueType(variable.value),
-    }),
-  );
-  return {
-    content,
-    args,
-  };
+  extractedVars.forEach(({ id, safeId }) => {
+    if (id !== safeId) content = content.replaceAll(id, safeId);
+  });
+
+  const args = extractedVars.map(({ safeId, value }) => ({
+    id: safeId,
+    value,
+  }));
+
+  return { content, args };
 };

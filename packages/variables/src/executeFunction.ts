@@ -29,16 +29,31 @@ export const executeFunction = async ({
   sessionStore,
   args: initialArgs,
 }: Props) => {
-  const parsedBody = parseVariables(body, {
+  // Variable IDs that start with a digit are not valid JS identifiers.
+  // Prefix them with _ so the injected code evaluates without SyntaxErrors.
+  const toSafeJsId = (id: string) => (/^\d/.test(id) ? `_${id}` : id);
+
+  const extractedVars = extractVariablesFromText(variables)(body).map(
+    (variable) => ({
+      id: variable.id,
+      safeId: toSafeJsId(variable.id),
+      value: parseGuessedValueType(variable.value),
+    }),
+  );
+
+  let parsedBody = parseVariables(body, {
     fieldToParse: "id",
     variables,
     sessionStore,
   });
+  extractedVars.forEach(({ id, safeId }) => {
+    if (id !== safeId) parsedBody = parsedBody.replaceAll(id, safeId);
+  });
 
   const args = (
-    extractVariablesFromText(variables)(body).map((variable) => ({
-      id: variable.id,
-      value: parseGuessedValueType(variable.value),
+    extractedVars.map(({ safeId, value }) => ({
+      id: safeId,
+      value,
     })) as { id: string; value: unknown }[]
   ).concat(
     initialArgs
