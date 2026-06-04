@@ -3,17 +3,28 @@ import { Isolate } from "isolated-vm";
 let lastCleanupTime = new Date();
 const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
 
+export type UsageReport = {
+  modelId: string;
+  provider: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  costUsd: number;
+};
+
 export class SessionStore {
   private isolate: Isolate | undefined;
   private emailSendingCount: number;
   private prevHash: string | undefined;
   private createdAt: Date;
+  private reportedUsage: UsageReport | undefined;
 
   constructor() {
     this.isolate = undefined;
     this.emailSendingCount = 0;
     this.prevHash = undefined;
     this.createdAt = new Date();
+    this.reportedUsage = undefined;
   }
 
   getEmailSendingCount(): number {
@@ -46,6 +57,14 @@ export class SessionStore {
 
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  reportUsage(usage: UsageReport): void {
+    this.reportedUsage = usage;
+  }
+
+  getReportedUsage(): UsageReport | undefined {
+    return this.reportedUsage;
   }
 }
 

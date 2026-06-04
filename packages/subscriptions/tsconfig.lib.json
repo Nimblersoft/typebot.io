@@ -9,10 +9,13 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
-      "path": "../prisma/tsconfig.lib.json"
+      "path": "../config/tsconfig.lib.json"
     },
     {
       "path": "../env/tsconfig.lib.json"
+    },
+    {
+      "path": "../prisma/tsconfig.lib.json"
     }
   ]
 }

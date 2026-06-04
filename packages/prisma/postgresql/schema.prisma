@@ -113,6 +113,10 @@ model Workspace {
   inactiveFirstEmailSentAt      DateTime?
   inactiveSecondEmailSentAt     DateTime?
   spaces                        Space[]
+  subscription                  Subscription?
+  invoices                      Invoice[]
+  payments                      Payment[]
+  llmUsageLogs                  LLMUsageLog[]
 }
 
 model Space {
@@ -480,4 +484,118 @@ enum CollaborationType {
   READ
   WRITE
   FULL_ACCESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  IN_GRACE
+  QUARANTINED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum InvoiceLineItemKind {
+  SUBSCRIPTION
+  AI_OVERAGE
+  ADJUSTMENT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  DEUNA
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @default(now()) @updatedAt
+  workspaceId         String             @unique
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tier                Plan
+  status              SubscriptionStatus @default(ACTIVE)
+  billingAnchorDay    Int
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  includedAiCreditUsd Decimal            @default(0) @db.Decimal(10, 4)
+  overageMarkupPct    Decimal            @default(0) @db.Decimal(5, 2)
+  aiHardCeilingUsd    Decimal?           @db.Decimal(10, 4)
+  invoices            Invoice[]
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+  workspaceId      String
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  subscriptionId   String
+  subscription     Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  periodStart      DateTime
+  periodEnd        DateTime
+  status           InvoiceStatus @default(DRAFT)
+  baseAmountUsd    Decimal       @default(0) @db.Decimal(10, 4)
+  overageAmountUsd Decimal       @default(0) @db.Decimal(10, 4)
+  totalUsd         Decimal       @default(0) @db.Decimal(10, 4)
+  dueAt            DateTime?
+  issuedAt         DateTime?
+  paidAt           DateTime?
+  paymentLink      String?
+  lineItems        InvoiceLineItem[]
+  payments         Payment[]
+}
+
+model InvoiceLineItem {
+  id          String              @id @default(cuid())
+  createdAt   DateTime            @default(now())
+  invoiceId   String
+  invoice     Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  kind        InvoiceLineItemKind
+  description String
+  amountUsd   Decimal             @db.Decimal(10, 4)
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
+  invoiceId         String
+  invoice           Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  workspaceId       String
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  method            PaymentMethod
+  provider          String
+  providerRef       String?
+  amountUsd         Decimal       @db.Decimal(10, 4)
+  status            PaymentStatus @default(PENDING)
+  confirmedByUserId String?
+  confirmedAt       DateTime?
+}
+
+model LLMUsageLog {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  typebotId    String?
+  model        String
+  provider     String
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  costUsd      Decimal   @db.Decimal(10, 6)
+
+  @@index([workspaceId, createdAt])
 }

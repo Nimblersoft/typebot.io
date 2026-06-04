@@ -12,6 +12,10 @@ export const TypebotLogo = (props: React.SVGProps<SVGSVGElement>) => (
         <polygon points="22,19 16,19 19,23" fill="black"></polygon>
       </mask>
     </defs>
-    <path d="M16 2 C16 10 22 16 30 16 C22 16 16 22 16 30 C16 22 10 16 2 16 C10 16 16 10 16 2 Z" fill="url(#logo-grad)" mask="url(#n-mask)"></path>
+    <path
+      d="M16 2 C16 10 22 16 30 16 C22 16 16 22 16 30 C16 22 10 16 2 16 C10 16 16 10 16 2 Z"
+      fill="url(#logo-grad)"
+      mask="url(#n-mask)"
+    ></path>
   </svg>
 );

@@ -17,7 +17,9 @@
   "dependencies": {
     "@typebot.io/prisma": "workspace:*",
     "@typebot.io/env": "workspace:*",
-    "@orpc/server": "^1.13.9"
+    "@typebot.io/config": "workspace:*",
+    "@orpc/server": "^1.13.9",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/bun": "^1.3.9"

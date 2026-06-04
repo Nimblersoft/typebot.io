@@ -39,6 +39,7 @@
     "cron:hourly": "SKIP_ENV_CHECK=true tsx --tsconfig ./tsconfig.json src/cronJobs/hourly.tsx",
     "cron:daily": "SKIP_ENV_CHECK=true tsx --tsconfig ./tsconfig.json src/cronJobs/daily.tsx",
     "cron:monthly": "SKIP_ENV_CHECK=true tsx --tsconfig ./tsconfig.json src/cronJobs/monthly.tsx",
+    "cron:nimblerbot": "SKIP_ENV_CHECK=true tsx --tsconfig ./tsconfig.json src/cronJobs/nimblerbot-daily.ts",
     "generateWorkspaceSummary": "SKIP_ENV_CHECK=true dotenv -e ./.env.production -- tsx --tsconfig ./tsconfig.json src/generateWorkspaceSummary.ts"
   },
   "exports": {

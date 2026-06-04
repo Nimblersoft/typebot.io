@@ -6,6 +6,7 @@ import { maxSteps } from "./constants";
 import { parseChatCompletionMessages } from "./parseChatCompletionMessages";
 import { parseTools } from "./parseTools";
 import type { Tools } from "./schemas";
+import { computeTokenCost } from "./tokenCost";
 import type { MessageInput } from "./types";
 
 type Props = {
@@ -52,6 +53,22 @@ export const runChatCompletion = async ({
       tools: parseTools({ tools, variables, sessionStore }),
       stopWhen: stepCountIs(maxSteps),
       headers,
+    });
+
+    const modelId = typeof model === "string" ? model : model.modelId;
+    const provider =
+      typeof model === "string"
+        ? (model.split("/")[0] ?? "unknown")
+        : model.provider;
+    const inputTokens = response.totalUsage.inputTokens ?? 0;
+    const outputTokens = response.totalUsage.outputTokens ?? 0;
+    sessionStore.reportUsage({
+      modelId,
+      provider,
+      inputTokens,
+      outputTokens,
+      totalTokens: response.totalUsage.totalTokens ?? 0,
+      costUsd: computeTokenCost(modelId, inputTokens, outputTokens),
     });
 
     responseMapping?.forEach((mapping) => {

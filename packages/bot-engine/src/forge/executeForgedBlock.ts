@@ -16,6 +16,8 @@ import { forgedBlocks } from "@typebot.io/forge-repository/definitions";
 import { forgedBlockHandlers } from "@typebot.io/forge-repository/handlers";
 import type { ForgedBlock } from "@typebot.io/forge-repository/schemas";
 import { isDefined } from "@typebot.io/lib/utils";
+import prisma from "@typebot.io/prisma";
+import { Plan } from "@typebot.io/prisma/enum";
 import type { SessionStore } from "@typebot.io/runtime-session-store";
 import { deepParseVariables } from "@typebot.io/variables/deepParseVariables";
 import {
@@ -125,6 +127,11 @@ export const executeForgedBlock = async (
   };
 
   let credentialsData: any;
+  // Tracks whether this call is using the Nimblerbot-owned internal OpenRouter key
+  // (BUSINESS plan, no BYOK credential). Used to decide whether to write LLMUsageLog
+  // and enforce the hard ceiling.
+  let isInternalAiRouting = false;
+
   if (blockDef.auth) {
     const noCredsErrorLog = [
       {
@@ -133,42 +140,70 @@ export const executeForgedBlock = async (
       },
     ];
 
-    if (!block.options.credentialsId)
+    if (!block.options.credentialsId) {
+      // 4.2: Inject Nimblerbot-owned internal OpenRouter key for BUSINESS workspaces
+      // that have no BYOK credential. Provider identity is hidden from customer UI.
+      const internalKey = process.env.INTERNAL_OPENROUTER_API_KEY;
+      if (block.type === "open-router" && internalKey) {
+        const workspace = await prisma.workspace.findUnique({
+          where: { id: state.workspaceId },
+          select: { plan: true },
+        });
+        if (workspace?.plan === Plan.BUSINESS) {
+          credentialsData = { apiKey: internalKey };
+          isInternalAiRouting = true;
+        } else {
+          return {
+            outgoingEdgeId: block.outgoingEdgeId,
+            logs: noCredsErrorLog,
+          };
+        }
+      } else {
+        return { outgoingEdgeId: block.outgoingEdgeId, logs: noCredsErrorLog };
+      }
+    } else {
+      const defaultClientEnvKeys =
+        "defaultClientEnvKeys" in blockDef.auth
+          ? blockDef.auth.defaultClientEnvKeys
+          : undefined;
+
+      const credentials = await getCredentials(
+        block.options.credentialsId,
+        state.workspaceId,
+      );
+
+      if (!credentials)
+        return {
+          outgoingEdgeId: block.outgoingEdgeId,
+          logs: noCredsErrorLog,
+        };
+
+      credentialsData = await decryptAndRefreshCredentialsData(
+        {
+          id: block.options.credentialsId,
+          type: blockDef.id as Credentials["type"],
+          data: credentials.data,
+          iv: credentials.iv,
+        },
+        defaultClientEnvKeys,
+      );
+
+      if (!credentialsData)
+        return {
+          outgoingEdgeId: block.outgoingEdgeId,
+          logs: noCredsErrorLog,
+        };
+    }
+  }
+
+  // 4.4: Hard ceiling circuit breaker — block internal AI calls when the workspace
+  // has consumed >= aiHardCeilingUsd in the current billing period.
+  if (isInternalAiRouting) {
+    const ceilingError = await checkAiHardCeiling(state.workspaceId);
+    if (ceilingError)
       return {
         outgoingEdgeId: block.outgoingEdgeId,
-        logs: noCredsErrorLog,
-      };
-
-    const defaultClientEnvKeys =
-      "defaultClientEnvKeys" in blockDef.auth
-        ? blockDef.auth.defaultClientEnvKeys
-        : undefined;
-
-    const credentials = await getCredentials(
-      block.options.credentialsId,
-      state.workspaceId,
-    );
-
-    if (!credentials)
-      return {
-        outgoingEdgeId: block.outgoingEdgeId,
-        logs: noCredsErrorLog,
-      };
-
-    credentialsData = await decryptAndRefreshCredentialsData(
-      {
-        id: block.options.credentialsId,
-        type: blockDef.id as Credentials["type"],
-        data: credentials.data,
-        iv: credentials.iv,
-      },
-      defaultClientEnvKeys,
-    );
-
-    if (!credentialsData)
-      return {
-        outgoingEdgeId: block.outgoingEdgeId,
-        logs: noCredsErrorLog,
+        logs: [{ status: "error", description: ceilingError }],
       };
   }
 
@@ -185,6 +220,27 @@ export const executeForgedBlock = async (
     logs: logsStore,
     sessionStore,
   });
+
+  // 4.1: Write LLMUsageLog after handler resolves. Usage is reported into
+  // sessionStore by runChatCompletion. Fire-and-forget — must not crash bot flow.
+  const usageReport = sessionStore.getReportedUsage();
+  if (usageReport) {
+    const typebotId = state.typebotsQueue[0]?.typebot.id;
+    prisma.lLMUsageLog
+      .create({
+        data: {
+          workspaceId: state.workspaceId,
+          typebotId: typebotId ?? null,
+          model: usageReport.modelId,
+          provider: usageReport.provider,
+          inputTokens: usageReport.inputTokens,
+          outputTokens: usageReport.outputTokens,
+          totalTokens: usageReport.totalTokens,
+          costUsd: usageReport.costUsd,
+        },
+      })
+      .catch(() => undefined);
+  }
 
   const clientSideActions: ExecuteIntegrationResponse["clientSideActions"] = [];
 
@@ -235,6 +291,32 @@ export const executeForgedBlock = async (
       : undefined,
     newSetVariableHistory: setVariableHistory,
   };
+};
+
+// Returns a user-visible error string if the workspace has hit its hard ceiling,
+// or null if the call can proceed. aiHardCeilingUsd = null means no ceiling.
+const checkAiHardCeiling = async (
+  workspaceId: string,
+): Promise<string | null> => {
+  const subscription = await prisma.subscription.findUnique({
+    where: { workspaceId },
+    select: { aiHardCeilingUsd: true, currentPeriodStart: true },
+  });
+  if (!subscription?.aiHardCeilingUsd) return null;
+
+  const periodUsage = await prisma.lLMUsageLog.aggregate({
+    where: {
+      workspaceId,
+      createdAt: { gte: subscription.currentPeriodStart },
+    },
+    _sum: { costUsd: true },
+  });
+
+  const periodCostUsd = Number(periodUsage._sum.costUsd ?? 0);
+  if (periodCostUsd >= Number(subscription.aiHardCeilingUsd))
+    return "AI usage limit reached for this billing period";
+
+  return null;
 };
 
 const isNextBubbleTextWithStreamingVar =
