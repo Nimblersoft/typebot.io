@@ -19,6 +19,7 @@ import { isDefined } from "@typebot.io/lib/utils";
 import prisma from "@typebot.io/prisma";
 import { Plan } from "@typebot.io/prisma/enum";
 import type { SessionStore } from "@typebot.io/runtime-session-store";
+import { isOverCeiling } from "@typebot.io/subscriptions/isOverCeiling";
 import { deepParseVariables } from "@typebot.io/variables/deepParseVariables";
 import {
   type ParseVariablesOptions,
@@ -313,7 +314,12 @@ const checkAiHardCeiling = async (
   });
 
   const periodCostUsd = Number(periodUsage._sum.costUsd ?? 0);
-  if (periodCostUsd >= Number(subscription.aiHardCeilingUsd))
+  if (
+    isOverCeiling({
+      periodCostUsd,
+      aiHardCeilingUsd: Number(subscription.aiHardCeilingUsd),
+    })
+  )
     return "AI usage limit reached for this billing period";
 
   return null;

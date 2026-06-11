@@ -42,6 +42,7 @@
     "@typebot.io/runtime-session-store": "workspace:*",
     "@typebot.io/schemas": "workspace:*",
     "@typebot.io/settings": "workspace:*",
+    "@typebot.io/subscriptions": "workspace:*",
     "@typebot.io/theme": "workspace:*",
     "@typebot.io/typebot": "workspace:*",
     "@typebot.io/variables": "workspace:*",

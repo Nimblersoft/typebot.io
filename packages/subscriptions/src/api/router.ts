@@ -3,6 +3,8 @@ import prisma from "@typebot.io/prisma";
 import { z } from "zod";
 import { activateSubscription } from "../activate";
 import { cancelSubscription } from "../cancel";
+import { changeTier } from "../changeTier";
+import { confirmInvoicePayment } from "../confirmInvoicePayment";
 import { staffProcedure } from "./staffProcedure";
 
 const activatablePlanSchema = z.enum(["BUSINESS", "ENTERPRISE"]);
@@ -28,6 +30,18 @@ export const subscriptionRouter = {
       .input(z.object({ workspaceId: z.string() }))
       .handler(async ({ input }) => {
         await cancelSubscription(input.workspaceId);
+        return { success: true };
+      }),
+
+    changeTier: staffProcedure
+      .input(
+        z.object({
+          workspaceId: z.string(),
+          tier: activatablePlanSchema,
+        }),
+      )
+      .handler(async ({ input }) => {
+        await changeTier(input.workspaceId, input.tier);
         return { success: true };
       }),
 
@@ -73,50 +87,19 @@ export const subscriptionRouter = {
           method: z.enum(["BANK_TRANSFER", "DEUNA"]),
           providerRef: z.string().optional(),
           amountUsd: z.number().positive(),
+          allowPartial: z.boolean().optional(),
         }),
       )
-      .handler(async ({ input, context }) => {
-        const now = new Date();
-        const invoice = await prisma.invoice.findUniqueOrThrow({
-          where: { id: input.invoiceId },
-        });
-
-        await prisma.$transaction(async (tx) => {
-          await tx.payment.create({
-            data: {
-              invoiceId: input.invoiceId,
-              workspaceId: invoice.workspaceId,
-              method: input.method,
-              provider: input.method === "BANK_TRANSFER" ? "manual" : "deuna",
-              providerRef: input.providerRef ?? null,
-              amountUsd: input.amountUsd,
-              status: "CONFIRMED",
-              confirmedByUserId: context.user.id,
-              confirmedAt: now,
-            },
-          });
-
-          await tx.invoice.update({
-            where: { id: input.invoiceId },
-            data: { status: "PAID", paidAt: now },
-          });
-
-          await tx.workspace.update({
-            where: { id: invoice.workspaceId },
-            data: { isPastDue: false, isQuarantined: false },
-          });
-
-          await tx.subscription.updateMany({
-            where: {
-              workspaceId: invoice.workspaceId,
-              status: { in: ["IN_GRACE", "QUARANTINED"] },
-            },
-            data: { status: "ACTIVE" },
-          });
-        });
-
-        return { success: true };
-      }),
+      .handler(async ({ input, context }) =>
+        confirmInvoicePayment({
+          invoiceId: input.invoiceId,
+          method: input.method,
+          providerRef: input.providerRef,
+          amountUsd: input.amountUsd,
+          allowPartial: input.allowPartial,
+          confirmedByUserId: context.user.id,
+        }),
+      ),
 
     void: staffProcedure
       .input(z.object({ invoiceId: z.string() }))

@@ -17,6 +17,9 @@
       "path": "../theme/tsconfig.lib.json"
     },
     {
+      "path": "../subscriptions/tsconfig.lib.json"
+    },
+    {
       "path": "../settings/tsconfig.lib.json"
     },
     {

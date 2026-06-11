@@ -2,10 +2,12 @@ import { sendInvoiceIssuedEmail } from "@typebot.io/emails/transactional/Invoice
 import prisma from "@typebot.io/prisma";
 import { generatePeriodInvoice } from "@typebot.io/subscriptions/generatePeriodInvoice";
 
-export const generateDueInvoices = async () => {
+export const generateDueInvoices = async (db: typeof prisma = prisma) => {
   const now = new Date();
 
-  const dueSubscriptions = await prisma.subscription.findMany({
+  // Only ACTIVE subscriptions are invoiced here; IN_GRACE/QUARANTINED subs are
+  // frozen until payment clears them back to ACTIVE.
+  const dueSubscriptions = await db.subscription.findMany({
     where: {
       status: "ACTIVE",
       currentPeriodEnd: { lte: now },
@@ -26,7 +28,7 @@ export const generateDueInvoices = async () => {
   let generated = 0;
   for (const subscription of dueSubscriptions) {
     try {
-      const invoice = await generatePeriodInvoice(subscription.id);
+      const invoice = await generatePeriodInvoice(subscription.id, db);
       generated++;
 
       const adminEmail = subscription.workspace.members[0]?.user.email;

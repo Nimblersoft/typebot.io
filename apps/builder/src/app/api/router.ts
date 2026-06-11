@@ -6,6 +6,7 @@ import { publicProcedure } from "@typebot.io/config/orpc/builder/middlewares";
 import { featureFlagsRouter } from "@typebot.io/feature-flags/orpc/router";
 import { fileUploadBuilderRouter } from "@typebot.io/file-input-block/api/router";
 import { spacesRouter } from "@typebot.io/spaces/orpc/router";
+import { adminRouter } from "@typebot.io/subscriptions/api/adminRouter";
 import { subscriptionRouter } from "@typebot.io/subscriptions/api/router";
 import { builderWhatsAppRouter } from "@typebot.io/whatsapp/api/router";
 import { z } from "zod";
@@ -87,6 +88,7 @@ export const appRouter: AppRouter = {
   auth: authRouter,
   billing: billingRouter,
   ...subscriptionRouter,
+  ...adminRouter,
 };
 
 export type AppRouter = {
@@ -121,4 +123,5 @@ export type AppRouter = {
   billing: typeof billingRouter;
   subscription: typeof subscriptionRouter.subscription;
   invoice: typeof subscriptionRouter.invoice;
+  admin: typeof adminRouter.admin;
 };

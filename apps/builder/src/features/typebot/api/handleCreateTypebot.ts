@@ -5,6 +5,7 @@ import prisma from "@typebot.io/prisma";
 import { Plan } from "@typebot.io/prisma/enum";
 import { latestTypebotVersion } from "@typebot.io/schemas/versions";
 import { getTypebotsLimit } from "@typebot.io/subscriptions/getTypebotsLimit";
+import { isOverBotLimit } from "@typebot.io/subscriptions/isOverBotLimit";
 import { trackEvents } from "@typebot.io/telemetry/trackEvents";
 import {
   type TypebotV6,
@@ -77,7 +78,7 @@ export const handleCreateTypebot = async ({
     const typebotCount = await prisma.typebot.count({
       where: { workspaceId, isArchived: { not: true } },
     });
-    if (typebotCount >= limit)
+    if (isOverBotLimit(limit, typebotCount))
       throw new ORPCError("BAD_REQUEST", {
         message: `You have reached the bot limit for your plan (${limit} bot${limit === 1 ? "" : "s"}). Upgrade to Business to create more.`,
       });

@@ -2,12 +2,19 @@ import type { LogsStore, VariableStore } from "@typebot.io/forge/types";
 import { parseUnknownError } from "@typebot.io/lib/parseUnknownError";
 import type { SessionStore } from "@typebot.io/runtime-session-store";
 import { generateText, type LanguageModel, stepCountIs } from "ai";
+import { z } from "zod";
 import { maxSteps } from "./constants";
 import { parseChatCompletionMessages } from "./parseChatCompletionMessages";
 import { parseTools } from "./parseTools";
 import type { Tools } from "./schemas";
 import { computeTokenCost } from "./tokenCost";
 import type { MessageInput } from "./types";
+
+// OpenRouter surfaces the actual USD cost of a call in provider metadata when
+// usage accounting is enabled; we prefer it over the static pricing map.
+const openRouterCostSchema = z.object({
+  openrouter: z.object({ usage: z.object({ cost: z.number() }) }),
+});
 
 type Props = {
   model: LanguageModel;
@@ -62,13 +69,21 @@ export const runChatCompletion = async ({
         : model.provider;
     const inputTokens = response.totalUsage.inputTokens ?? 0;
     const outputTokens = response.totalUsage.outputTokens ?? 0;
+    const reportedCostUsd = openRouterCostSchema.safeParse(
+      response.providerMetadata,
+    ).data?.openrouter.usage.cost;
     sessionStore.reportUsage({
       modelId,
       provider,
       inputTokens,
       outputTokens,
       totalTokens: response.totalUsage.totalTokens ?? 0,
-      costUsd: computeTokenCost(modelId, inputTokens, outputTokens),
+      costUsd: computeTokenCost(
+        modelId,
+        inputTokens,
+        outputTokens,
+        reportedCostUsd,
+      ),
     });
 
     responseMapping?.forEach((mapping) => {

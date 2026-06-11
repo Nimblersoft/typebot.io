@@ -313,6 +313,9 @@
         "ky": "^1.2.4",
         "zod": "^4.3.5",
       },
+      "devDependencies": {
+        "@types/bun": "^1.3.9",
+      },
     },
     "packages/auth": {
       "name": "@typebot.io/auth",
@@ -480,6 +483,7 @@
         "@typebot.io/runtime-session-store": "workspace:*",
         "@typebot.io/schemas": "workspace:*",
         "@typebot.io/settings": "workspace:*",
+        "@typebot.io/subscriptions": "workspace:*",
         "@typebot.io/theme": "workspace:*",
         "@typebot.io/typebot": "workspace:*",
         "@typebot.io/variables": "workspace:*",
@@ -1147,6 +1151,7 @@
         "@typebot.io/prisma": "workspace:*",
         "@typebot.io/results": "workspace:*",
         "@typebot.io/rich-text": "workspace:*",
+        "@typebot.io/subscriptions": "workspace:*",
         "@typebot.io/telemetry": "workspace:*",
         "@typebot.io/typebot": "workspace:*",
         "@typebot.io/workspaces": "workspace:*",
@@ -1161,6 +1166,7 @@
         "zod": "^4.3.5",
       },
       "devDependencies": {
+        "@prisma/client": "^7.4.0",
         "@typebot.io/blocks-integrations": "workspace:*",
         "@types/bun": "^1.3.9",
         "@types/cli-progress": "^3.11.5",
@@ -1168,6 +1174,7 @@
         "@types/prompts": "^2.4.4",
         "dotenv": "^16.4.5",
         "tsx": "^4.19.1",
+        "vitest": "4.1.0",
       },
     },
     "packages/services/feature-flags": {
@@ -1222,11 +1229,15 @@
       "version": "0.0.1",
       "dependencies": {
         "@orpc/server": "^1.13.9",
+        "@typebot.io/config": "workspace:*",
         "@typebot.io/env": "workspace:*",
         "@typebot.io/prisma": "workspace:*",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
+        "@prisma/client": "^7.4.0",
         "@types/bun": "^1.3.9",
+        "vitest": "4.1.0",
       },
     },
     "packages/telemetry": {

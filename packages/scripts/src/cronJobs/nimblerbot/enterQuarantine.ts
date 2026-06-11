@@ -3,11 +3,11 @@ import prisma from "@typebot.io/prisma";
 
 const GRACE_DAYS = 7;
 
-export const enterQuarantine = async () => {
+export const enterQuarantine = async (db: typeof prisma = prisma) => {
   const now = new Date();
   const graceCutoff = new Date(now.getTime() - GRACE_DAYS * 86400000);
 
-  const expiredInvoices = await prisma.invoice.findMany({
+  const expiredInvoices = await db.invoice.findMany({
     where: {
       status: "OVERDUE",
       dueAt: { lt: graceCutoff },
@@ -35,12 +35,12 @@ export const enterQuarantine = async () => {
     return;
   }
 
-  await prisma.$transaction([
-    prisma.workspace.updateMany({
+  await db.$transaction([
+    db.workspace.updateMany({
       where: { id: { in: affectedWorkspaceIds } },
       data: { isQuarantined: true },
     }),
-    prisma.subscription.updateMany({
+    db.subscription.updateMany({
       where: {
         workspaceId: { in: affectedWorkspaceIds },
         status: "IN_GRACE",

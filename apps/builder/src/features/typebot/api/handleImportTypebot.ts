@@ -5,6 +5,7 @@ import { replaceTypebotUploadUrlsWithNewIds } from "@typebot.io/lib/s3/replaceTy
 import prisma from "@typebot.io/prisma";
 import { Plan } from "@typebot.io/prisma/enum";
 import { getTypebotsLimit } from "@typebot.io/subscriptions/getTypebotsLimit";
+import { isOverBotLimit } from "@typebot.io/subscriptions/isOverBotLimit";
 import { isPlanEntitledForTemplate } from "@typebot.io/subscriptions/isPlanEntitledForTemplate";
 import { trackEvents } from "@typebot.io/telemetry/trackEvents";
 import { templates as templatesData } from "@typebot.io/templates";
@@ -128,7 +129,7 @@ export const handleImportTypebot = async ({
     const typebotCount = await prisma.typebot.count({
       where: { workspaceId, isArchived: { not: true } },
     });
-    if (typebotCount >= limit)
+    if (isOverBotLimit(limit, typebotCount))
       throw new ORPCError("BAD_REQUEST", {
         message: `You have reached the bot limit for your plan (${limit} bot${limit === 1 ? "" : "s"}). Upgrade to Business to create more.`,
       });

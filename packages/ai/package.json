@@ -2,6 +2,9 @@
   "name": "@typebot.io/ai",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "test": "bun test"
+  },
   "exports": {
     "./*": {
       "types": "./src/*.ts",
@@ -18,5 +21,8 @@
     "ky": "^1.2.4",
     "@typebot.io/runtime-session-store": "workspace:*",
     "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.9"
   }
 }

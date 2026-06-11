@@ -1,10 +1,10 @@
 import { sendGraceWarningEmail } from "@typebot.io/emails/transactional/GraceWarningEmail";
 import prisma from "@typebot.io/prisma";
 
-export const enterGrace = async () => {
+export const enterGrace = async (db: typeof prisma = prisma) => {
   const now = new Date();
 
-  const overdueInvoices = await prisma.invoice.findMany({
+  const overdueInvoices = await db.invoice.findMany({
     where: {
       status: { in: ["ISSUED", "OVERDUE"] },
       dueAt: { lt: now },
@@ -32,18 +32,18 @@ export const enterGrace = async () => {
     return;
   }
 
-  await prisma.$transaction([
-    prisma.invoice.updateMany({
+  await db.$transaction([
+    db.invoice.updateMany({
       where: {
         id: { in: overdueInvoices.map((i) => i.id) },
       },
       data: { status: "OVERDUE" },
     }),
-    prisma.workspace.updateMany({
+    db.workspace.updateMany({
       where: { id: { in: affectedWorkspaceIds } },
       data: { isPastDue: true },
     }),
-    prisma.subscription.updateMany({
+    db.subscription.updateMany({
       where: {
         workspaceId: { in: affectedWorkspaceIds },
         status: "ACTIVE",

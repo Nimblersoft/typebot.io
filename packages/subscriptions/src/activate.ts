@@ -1,5 +1,6 @@
 import prisma from "@typebot.io/prisma";
 import type { Plan } from "@typebot.io/prisma/enum";
+import { computeNextPeriod } from "./computeNextPeriod";
 import { tierConfig } from "./tiers";
 
 export type ActivatablePlan = Extract<Plan, "BUSINESS" | "ENTERPRISE">;
@@ -7,33 +8,57 @@ export type ActivatablePlan = Extract<Plan, "BUSINESS" | "ENTERPRISE">;
 type ActivateOptions = {
   includedAiCreditUsd?: number;
   overageMarkupPct?: number;
-  aiHardCeilingUsd?: number;
+  aiHardCeilingUsd?: number | null;
 };
 
 export const activateSubscription = async (
   workspaceId: string,
   tier: ActivatablePlan,
   options: ActivateOptions = {},
+  db: typeof prisma = prisma,
 ) => {
   const config = tierConfig[tier];
   const now = new Date();
-  const periodEnd = addMonths(now, 1);
-  const dueAt = addDays(now, 7);
+  const anchorDay = now.getDate();
+  // Anchor the first period to the activation day too, so a 31st activation
+  // doesn't overflow into the month after next.
+  const { periodEnd, dueAt } = computeNextPeriod(anchorDay, now);
   const baseAmount = config.priceUsd ?? 0;
   const periodLabel = formatPeriod(now, periodEnd);
 
-  return prisma.$transaction(async (tx) => {
-    const subscription = await tx.subscription.create({
-      data: {
+  const includedAiCreditUsd =
+    options.includedAiCreditUsd ?? config.includedAiCreditUsd;
+  const overageMarkupPct = options.overageMarkupPct ?? config.overageMarkupPct;
+  const aiHardCeilingUsd =
+    options.aiHardCeilingUsd === undefined
+      ? config.defaultAiHardCeilingUsd
+      : options.aiHardCeilingUsd;
+
+  return db.$transaction(async (tx) => {
+    // Upsert so re-activating a CANCELED workspace revives the existing row
+    // instead of hitting the @unique(workspaceId) constraint (P2002).
+    const subscription = await tx.subscription.upsert({
+      where: { workspaceId },
+      create: {
         workspaceId,
         tier,
         status: "ACTIVE",
-        billingAnchorDay: now.getDate(),
+        billingAnchorDay: anchorDay,
         currentPeriodStart: now,
         currentPeriodEnd: periodEnd,
-        includedAiCreditUsd: options.includedAiCreditUsd ?? 0,
-        overageMarkupPct: options.overageMarkupPct ?? 0,
-        aiHardCeilingUsd: options.aiHardCeilingUsd ?? null,
+        includedAiCreditUsd,
+        overageMarkupPct,
+        aiHardCeilingUsd,
+      },
+      update: {
+        tier,
+        status: "ACTIVE",
+        billingAnchorDay: anchorDay,
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+        includedAiCreditUsd,
+        overageMarkupPct,
+        aiHardCeilingUsd,
       },
     });
 
@@ -66,18 +91,6 @@ export const activateSubscription = async (
 
     return { subscription, invoice };
   });
-};
-
-const addMonths = (date: Date, months: number): Date => {
-  const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
-  return result;
-};
-
-const addDays = (date: Date, days: number): Date => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
 };
 
 export const formatPeriod = (start: Date, end: Date): string => {

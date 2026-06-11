@@ -39,9 +39,21 @@ export const computeTokenCost = (
   modelId: string,
   inputTokens: number,
   outputTokens: number,
+  reportedCostUsd?: number,
 ): number => {
+  // Prefer the cost the provider (OpenRouter) reports in the response; the
+  // static map is only a fallback for when no cost is returned.
+  if (reportedCostUsd !== undefined && reportedCostUsd > 0)
+    return reportedCostUsd;
+
   const pricing = MODEL_PRICING[modelId];
-  if (!pricing) return 0;
+  if (!pricing) {
+    // Don't silently bill $0 — surface the gap so the map can be kept current.
+    console.warn(
+      `[tokenCost] No pricing for model "${modelId}" and no cost in response; billing $0. Add it to MODEL_PRICING.`,
+    );
+    return 0;
+  }
   return (
     (inputTokens / 1_000_000) * pricing.inputPer1M +
     (outputTokens / 1_000_000) * pricing.outputPer1M
