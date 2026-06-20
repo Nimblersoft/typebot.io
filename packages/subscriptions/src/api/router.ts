@@ -5,6 +5,8 @@ import { activateSubscription } from "../activate";
 import { cancelSubscription } from "../cancel";
 import { changeTier } from "../changeTier";
 import { confirmInvoicePayment } from "../confirmInvoicePayment";
+import { getAiUsage } from "../getAiUsage";
+import { assertWorkspaceMember } from "./assertWorkspaceMember";
 import { staffProcedure } from "./staffProcedure";
 
 const activatablePlanSchema = z.enum(["BUSINESS", "ENTERPRISE"]);
@@ -47,11 +49,19 @@ export const subscriptionRouter = {
 
     getByWorkspace: authenticatedProcedure
       .input(z.object({ workspaceId: z.string() }))
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
+        await assertWorkspaceMember(context.user, input.workspaceId);
         return prisma.subscription.findUnique({
           where: { workspaceId: input.workspaceId },
           include: { invoices: { orderBy: { createdAt: "desc" }, take: 12 } },
         });
+      }),
+
+    getAiUsage: authenticatedProcedure
+      .input(z.object({ workspaceId: z.string() }))
+      .handler(async ({ input, context }) => {
+        await assertWorkspaceMember(context.user, input.workspaceId);
+        return getAiUsage(input.workspaceId);
       }),
   },
 
@@ -64,8 +74,9 @@ export const subscriptionRouter = {
           cursor: z.string().optional(),
         }),
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         const { workspaceId, take, cursor } = input;
+        await assertWorkspaceMember(context.user, workspaceId);
         const items = await prisma.invoice.findMany({
           where: { workspaceId },
           orderBy: { createdAt: "desc" },
