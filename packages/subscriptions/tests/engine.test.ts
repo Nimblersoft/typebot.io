@@ -98,6 +98,19 @@ describe("changeTier", () => {
     expect(sub.tier).toBe("ENTERPRISE");
     expect(refreshed.plan).toBe("ENTERPRISE");
   });
+
+  it("rejects a tier change on a canceled subscription", async () => {
+    const workspace = await createTestWorkspace("FREE");
+    await activateSubscription(workspace.id, "BUSINESS", {}, db);
+    await cancelSubscription(workspace.id, db);
+
+    await expect(changeTier(workspace.id, "ENTERPRISE", db)).rejects.toThrow();
+
+    const sub = await db.subscription.findUniqueOrThrow({
+      where: { workspaceId: workspace.id },
+    });
+    expect(sub.tier).toBe("BUSINESS");
+  });
 });
 
 describe("generatePeriodInvoice", () => {
