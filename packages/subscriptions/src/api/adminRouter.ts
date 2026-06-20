@@ -1,5 +1,6 @@
 import prisma from "@typebot.io/prisma";
 import { z } from "zod";
+import { setWorkspaceSuspension } from "../setWorkspaceSuspension";
 import { staffProcedure } from "./staffProcedure";
 
 export const adminRouter = {
@@ -128,20 +129,23 @@ export const adminRouter = {
 
     suspendWorkspace: staffProcedure
       .input(z.object({ workspaceId: z.string(), reason: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await prisma.workspace.update({
-          where: { id: input.workspaceId },
-          data: { isSuspended: true },
+      .handler(async ({ input, context }) => {
+        await setWorkspaceSuspension({
+          workspaceId: input.workspaceId,
+          isSuspended: true,
+          reason: input.reason,
+          performedBy: context.user,
         });
         return { success: true };
       }),
 
     unsuspendWorkspace: staffProcedure
       .input(z.object({ workspaceId: z.string() }))
-      .handler(async ({ input }) => {
-        await prisma.workspace.update({
-          where: { id: input.workspaceId },
-          data: { isSuspended: false },
+      .handler(async ({ input, context }) => {
+        await setWorkspaceSuspension({
+          workspaceId: input.workspaceId,
+          isSuspended: false,
+          performedBy: context.user,
         });
         return { success: true };
       }),

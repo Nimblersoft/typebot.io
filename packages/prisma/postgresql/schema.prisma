@@ -103,6 +103,7 @@ model Workspace {
   customSeatsLimit              Int?
   isQuarantined                 Boolean               @default(false)
   isSuspended                   Boolean               @default(false)
+  suspendReason                 String?
   isPastDue                     Boolean               @default(false)
   isVerified                    Boolean?
   themeTemplates                ThemeTemplate[]
@@ -117,6 +118,7 @@ model Workspace {
   invoices                      Invoice[]
   payments                      Payment[]
   llmUsageLogs                  LLMUsageLog[]
+  auditLogs                     WorkspaceAuditLog[]
 }
 
 model Space {
@@ -596,6 +598,22 @@ model LLMUsageLog {
   outputTokens Int
   totalTokens  Int
   costUsd      Decimal   @db.Decimal(10, 6)
+
+  @@index([workspaceId, createdAt])
+}
+
+// Append-only record of staff lifecycle actions on a workspace (suspend,
+// unsuspend, …) so non-payment/abuse history stays queryable. The actor is
+// stored as scalars (no User FK) to keep the change localized to billing.
+model WorkspaceAuditLog {
+  id                String    @id @default(cuid())
+  createdAt         DateTime  @default(now())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  action            String
+  reason            String?
+  performedByUserId String?
+  performedByEmail  String?
 
   @@index([workspaceId, createdAt])
 }
