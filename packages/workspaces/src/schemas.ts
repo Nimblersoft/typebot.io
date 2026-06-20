@@ -49,6 +49,7 @@ export const workspaceSchema = z.object({
   customSeatsLimit: z.number().nullable(),
   isQuarantined: z.boolean(),
   isSuspended: z.boolean(),
+  suspendReason: z.string().nullable(),
   isPastDue: z.boolean(),
   isVerified: z.boolean().nullable(),
   chatsHardLimit: z.number().nullable(),
