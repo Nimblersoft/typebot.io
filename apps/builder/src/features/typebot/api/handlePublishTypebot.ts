@@ -12,6 +12,7 @@ import {
 } from "@typebot.io/runtime-session-store";
 import { isTypebotVersionAtLeastV6 } from "@typebot.io/schemas/helpers/isTypebotVersionAtLeastV6";
 import { settingsSchema } from "@typebot.io/settings/schemas";
+import { assertBlocksEntitled } from "@typebot.io/subscriptions/assertBlocksEntitled";
 import type { TelemetryEvent } from "@typebot.io/telemetry/schemas";
 import { sendMessage } from "@typebot.io/telemetry/sendMessage";
 import { trackEvents } from "@typebot.io/telemetry/trackEvents";
@@ -89,6 +90,13 @@ export const handlePublishTypebot = async ({
     throw new ORPCError("BAD_REQUEST", {
       message: "File upload blocks can't be published on the free plan",
     });
+
+  assertBlocksEntitled(
+    existingTypebot.workspace.plan,
+    parseGroups(existingTypebot.groups, {
+      typebotVersion: existingTypebot.version,
+    }),
+  );
 
   const typebotWasVerified =
     existingTypebot.riskLevel === -1 || existingTypebot.workspace.isVerified;

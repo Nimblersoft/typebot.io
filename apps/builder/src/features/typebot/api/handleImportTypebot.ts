@@ -4,6 +4,7 @@ import { copyObjects } from "@typebot.io/lib/s3/copyObjects";
 import { replaceTypebotUploadUrlsWithNewIds } from "@typebot.io/lib/s3/replaceTypebotUploadUrlsWithNewIds";
 import prisma from "@typebot.io/prisma";
 import { Plan } from "@typebot.io/prisma/enum";
+import { assertBlocksEntitled } from "@typebot.io/subscriptions/assertBlocksEntitled";
 import { getTypebotsLimit } from "@typebot.io/subscriptions/getTypebotsLimit";
 import { isOverBotLimit } from "@typebot.io/subscriptions/isOverBotLimit";
 import { isPlanEntitledForTemplate } from "@typebot.io/subscriptions/isPlanEntitledForTemplate";
@@ -146,6 +147,9 @@ export const handleImportTypebot = async ({
   const duplicatingBot = await migrateImportingTypebot(
     newUploadUrlsResponse.typebot,
   );
+
+  if (duplicatingBot.groups)
+    assertBlocksEntitled(workspace.plan, duplicatingBot.groups);
 
   const groups = (
     duplicatingBot.groups

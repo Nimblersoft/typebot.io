@@ -2,6 +2,7 @@ import { ORPCError } from "@orpc/server";
 import prisma from "@typebot.io/prisma";
 import { DbNull } from "@typebot.io/prisma/enum";
 import { settingsSchema } from "@typebot.io/settings/schemas";
+import { assertBlocksEntitled } from "@typebot.io/subscriptions/assertBlocksEntitled";
 import { migrateTypebot } from "@typebot.io/typebot/migrations/migrateTypebot";
 import {
   typebotSchema,
@@ -145,6 +146,9 @@ export const handleUpdateTypebot = async ({
         message: "Public id not available",
       });
   }
+
+  if (typebot.groups)
+    assertBlocksEntitled(existingTypebot.workspace.plan, typebot.groups);
 
   const groups = typebot.groups
     ? await sanitizeGroups(typebot.groups, {
