@@ -478,6 +478,44 @@ const inngestEnv = {
   },
 };
 
+const nimblerbotEnv = {
+  client: {
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_SUPPORT_EMAIL: z.string().email().optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_SALES_EMAIL: z.string().email().optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_BANK_NAME: z.string().min(1).optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_TYPE: z.string().min(1).optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_NUMBER: z
+      .string()
+      .min(1)
+      .optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_BENEFICIARY: z.string().min(1).optional(),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_TAX_ID: z.string().min(1).optional(),
+  },
+  runtimeEnv: {
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_SUPPORT_EMAIL: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_SUPPORT_EMAIL",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_SALES_EMAIL: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_SALES_EMAIL",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_BANK_NAME: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_BANK_NAME",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_TYPE: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_TYPE",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_NUMBER: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_ACCOUNT_NUMBER",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_BENEFICIARY: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_BENEFICIARY",
+    ),
+    NEXT_PUBLIC_NIMBLERBOT_BILLING_TAX_ID: getRuntimeVariable(
+      "NEXT_PUBLIC_NIMBLERBOT_BILLING_TAX_ID",
+    ),
+  },
+};
+
 const otelEnv = {
   server: {
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
@@ -543,6 +581,7 @@ export const env = createEnv({
     ...posthogEnv.client,
     ...tolgeeEnv.client,
     ...partykitEnv.client,
+    ...nimblerbotEnv.client,
   },
   experimental__runtimeEnv: {
     ...baseEnv.runtimeEnv,
@@ -557,6 +596,7 @@ export const env = createEnv({
     ...posthogEnv.runtimeEnv,
     ...tolgeeEnv.runtimeEnv,
     ...partykitEnv.runtimeEnv,
+    ...nimblerbotEnv.runtimeEnv,
   },
   skipValidation:
     process.env.SKIP_ENV_CHECK === "true" ||

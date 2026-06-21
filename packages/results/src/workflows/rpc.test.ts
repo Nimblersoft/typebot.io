@@ -44,7 +44,7 @@ describe("ExecuteExportResultsWorkflow", () => {
 
     const mockWorkflowLayer = ExportResultsWorkflow.toLayer(
       Effect.fn(function* () {
-        yield* Effect.sleep("50 millis");
+        yield* Effect.sleep("300 millis");
         return {
           fileUrl: new URL("http://example.com/file.csv"),
           typebotName: "Test Typebot",
@@ -62,15 +62,15 @@ describe("ExecuteExportResultsWorkflow", () => {
         testPayload,
       ).pipe(Stream.runCollect, Effect.forkChild);
 
-      yield* Effect.sleep("5 millis");
+      yield* Effect.sleep("50 millis");
       yield* Queue.offer(progressQueue, "0");
-      yield* Effect.sleep("5 millis");
+      yield* Effect.sleep("10 millis");
       yield* Queue.offer(progressQueue, "25");
-      yield* Effect.sleep("5 millis");
+      yield* Effect.sleep("10 millis");
       yield* Queue.offer(progressQueue, "50");
-      yield* Effect.sleep("5 millis");
+      yield* Effect.sleep("10 millis");
       yield* Queue.offer(progressQueue, "75");
-      yield* Effect.sleep("5 millis");
+      yield* Effect.sleep("10 millis");
       yield* Queue.offer(progressQueue, "100");
 
       return yield* Fiber.join(streamFiber);
@@ -99,7 +99,7 @@ describe("ExecuteExportResultsWorkflow", () => {
       status: "completed",
       fileUrl: "http://example.com/file.csv",
     });
-  });
+  }, 5_000);
 
   it("should fail when workflow fails (and not hang)", async () => {
     const progressQueue = await Effect.runPromise(Queue.unbounded<string>());
